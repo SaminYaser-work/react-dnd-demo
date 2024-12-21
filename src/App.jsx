@@ -3,23 +3,33 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
+const ITEMS = Array(100)
+    .fill(0)
+    .map((_, i) => ({
+        value: i,
+        label: `Item ${i + 1}`,
+    }));
+
+const DEF_CONFIG = {
+    mousedown: false,
+    dragIdx: -1,
+    targetIdx: -1,
+    initialPos: 0,
+    itemHeight: 0,
+    lastMoveTime: 0,
+    gap: 16,
+
+    // Add scrolling related properties
+    scrollInterval: null,
+    scrollSpeed: 100,
+    scrollThreshold: 300, // pixels from top/bottom to trigger scroll
+};
+
 function App() {
-    const [items, setItems] = useState([
-        { value: 1, label: "Item 1" },
-        { value: 2, label: "Item 2" },
-        { value: 3, label: "Item 3" },
-        { value: 4, label: "Item 4" },
-    ]);
+    const [items, setItems] = useState(ITEMS);
 
     const refs = useRef([]);
-    const dragInfo = useRef({
-        mousedown: false,
-        dragIdx: -1,
-        targetIdx: -1,
-        initialPos: 0,
-        itemHeight: 0,
-        lastMoveTime: 0,
-    });
+    const dragInfo = useRef(DEF_CONFIG);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -32,8 +42,9 @@ function App() {
             }
         }
 
+
         function updatePreview(currentY) {
-            const { dragIdx, itemHeight } = dragInfo.current;
+            const { dragIdx, itemHeight, gap } = dragInfo.current;
             if (dragIdx === -1) return;
 
             const draggedEl = refs.current[dragIdx];
@@ -63,10 +74,10 @@ function App() {
 
                     if (draggedCenter > center && i > dragIdx) {
                         targetIdx = i;
-                        newTransform = `translateY(-${itemHeight}px)`;
+                        newTransform = `translateY(-${itemHeight + gap}px)`;
                     } else if (draggedCenter < center && i < dragIdx) {
                         targetIdx = Math.min(targetIdx, i);
-                        newTransform = `translateY(${itemHeight}px)`;
+                        newTransform = `translateY(${itemHeight + gap}px)`;
                     }
 
                     if (el.style.transform !== newTransform) {
@@ -99,6 +110,7 @@ function App() {
             });
 
             dragInfo.current = {
+                ...DEF_CONFIG,
                 mousedown: true,
                 dragIdx: idx,
                 targetIdx: idx,
@@ -136,14 +148,7 @@ function App() {
             }
 
             // Reset drag info
-            dragInfo.current = {
-                mousedown: false,
-                dragIdx: -1,
-                targetIdx: -1,
-                initialPos: 0,
-                itemHeight: 0,
-                lastMoveTime: 0,
-            };
+            dragInfo.current = DEF_CONFIG;
         }
 
         refs.current.forEach((el, i) => {
